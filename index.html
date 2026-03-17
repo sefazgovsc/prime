@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Consulta CNPJ</title>
+<style>
+body {
+    font-family: Arial;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 900px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+}
+input, button {
+    padding: 10px;
+    margin: 5px 0;
+}
+button {
+    cursor: pointer;
+    background: #007bff;
+    color: #fff;
+    border: none;
+}
+.tabs button {
+    margin: 5px;
+}
+.tab {
+    display: none;
+    margin-top: 20px;
+}
+.tab.active {
+    display: block;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Consulta de CNPJ</h2>
+    
+    <input type="text" id="cnpj" placeholder="Digite o CNPJ">
+    <button onclick="buscarCNPJ()">Buscar</button>
+
+    <div class="tabs">
+        <button onclick="mostrarTab('geral')">Geral</button>
+        <button onclick="mostrarTab('endereco')">Endereço</button>
+        <button onclick="mostrarTab('socios')">Sócios</button>
+    </div>
+
+    <div id="geral" class="tab active"></div>
+    <div id="endereco" class="tab"></div>
+    <div id="socios" class="tab"></div>
+</div>
+
+<script>
+function mostrarTab(tabId) {
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(tabId).classList.add('active');
+}
+
+async function buscarCNPJ() {
+    let cnpj = document.getElementById('cnpj').value.replace(/\D/g, '');
+
+    if (!cnpj) {
+        alert("Digite um CNPJ válido");
+        return;
+    }
+
+    try {
+        let response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        let data = await response.json();
+
+        // Geral
+        document.getElementById('geral').innerHTML = `
+            <h3>Dados Gerais</h3>
+            <p><strong>Razão Social:</strong> ${data.razao_social}</p>
+            <p><strong>Nome Fantasia:</strong> ${data.nome_fantasia || 'N/A'}</p>
+            <p><strong>Situação:</strong> ${data.descricao_situacao_cadastral}</p>
+            <p><strong>Data Abertura:</strong> ${data.data_inicio_atividade}</p>
+            <p><strong>CNAE:</strong> ${data.cnae_fiscal_descricao}</p>
+            <p><strong>Porte:</strong> ${data.porte}</p>
+        `;
+
+        // Endereço
+        document.getElementById('endereco').innerHTML = `
+            <h3>Endereço</h3>
+            <p>${data.logradouro}, ${data.numero}</p>
+            <p>${data.bairro}</p>
+            <p>${data.municipio} - ${data.uf}</p>
+            <p>CEP: ${data.cep}</p>
+        `;
+
+        // Sócios
+        let sociosHTML = "<h3>Sócios</h3>";
+        data.qsa.forEach(socio => {
+            sociosHTML += `
+                <p><strong>${socio.nome_socio}</strong> - ${socio.qualificacao_socio}</p>
+            `;
+        });
+
+        document.getElementById('socios').innerHTML = sociosHTML;
+
+    } catch (error) {
+        alert("Erro ao buscar CNPJ");
+        console.error(error);
+    }
+}
+</script>
+
+</body>
+</html>
